@@ -1,0 +1,18 @@
+# Normalise line endings to LF in the repository and on checkout.
+#
+# This project is developed on Windows and deployed to Linux. Without this, CRLF
+# endings ride along into the repo and break anything the server executes directly
+# — a shell script with CRLF fails with a confusing "bad interpreter" error.
+* text=auto eol=lf
+
+# Never touch binary assets.
+*.mp3 binary
+*.ogg binary
+*.opus binary
+*.wav binary
+*.flac binary
+*.m4a binary
+*.webm binary
+*.png binary
+*.jpg binary
+*.ico binary

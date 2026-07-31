@@ -1,0 +1,27 @@
+node_modules/
+dist/
+
+# Machine-local tool settings
+.claude/settings.local.json
+
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+
+# YouTube cookies are live session credentials for a Google account
+cookies.txt
+*.cookies.txt
+
+# Audio library: keep the folder structure, ignore the contents. Downloads and
+# hand-added sounds are both large and personal.
+sounds/*
+!sounds/tracks/
+!sounds/sfx/
+sounds/tracks/*
+sounds/sfx/*
+!sounds/tracks/.gitkeep
+!sounds/sfx/.gitkeep
+
+*.log
+.DS_Store

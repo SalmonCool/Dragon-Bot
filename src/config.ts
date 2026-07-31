@@ -1,0 +1,70 @@
+import 'dotenv/config';
+
+/**
+ * Environment is validated at startup so a missing value fails immediately with a
+ * readable message, rather than surfacing as an opaque Discord API error later.
+ *
+ * Validation is per-entry-point: the bot needs a token to log in, but only the
+ * register script needs the guild ID. Requiring everything everywhere would block
+ * the bot from starting over a value it never reads.
+ */
+function required(name: string): string {
+  const value = process.env[name];
+  if (!value || value.trim() === '') {
+    throw new Error(
+      `Missing required environment variable: ${name}\n` +
+        `Copy .env.example to .env and fill it in — see README.md.`,
+    );
+  }
+  return value.trim();
+}
+
+export const config = {
+  token: required('DISCORD_TOKEN'),
+  clientId: required('DISCORD_CLIENT_ID'),
+} as const;
+
+/**
+ * Single-guild bot: commands are registered to this guild only, which propagates
+ * instantly instead of the up-to-an-hour delay on global commands.
+ *
+ * Only the register script needs this, so it is resolved on demand.
+ */
+export function requireGuildId(): string {
+  return required('DISCORD_GUILD_ID');
+}
+
+export interface WebSettings {
+  port: number;
+  password: string;
+  secret: string;
+  secure: boolean;
+}
+
+/**
+ * The web UI is opt-in: without WEB_PASSWORD the server never starts.
+ *
+ * Failing closed matters here — a control surface for the bot should not appear on a
+ * port just because someone deployed with a default config.
+ */
+export function webSettings(): WebSettings | undefined {
+  const password = process.env.WEB_PASSWORD?.trim();
+  if (!password) return undefined;
+
+  const secret = process.env.WEB_SECRET?.trim();
+  if (!secret || secret.length < 16) {
+    throw new Error(
+      'WEB_PASSWORD is set but WEB_SECRET is missing or too short (need 16+ chars).\n' +
+        'Generate one with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"',
+    );
+  }
+
+  return {
+    port: Number(process.env.WEB_PORT ?? 8080),
+    password,
+    secret,
+    // Behind HTTPS (Caddy on the VPS) the cookie must be Secure; on plain-HTTP
+    // local testing that flag would cause the browser to drop it entirely.
+    secure: process.env.WEB_SECURE === 'true',
+  };
+}

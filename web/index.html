@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dragon Bot</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- Login gate. The password is only ever sent to the server; nothing about it
+         is stored or checked in this page. -->
+    <section id="login" class="login hidden">
+      <form id="login-form" class="login-card">
+        <h1>Dragon Bot</h1>
+        <p class="muted">Enter the shared password to continue.</p>
+        <input
+          id="password"
+          type="password"
+          placeholder="Password"
+          autocomplete="current-password"
+          required
+        />
+        <button type="submit">Enter</button>
+        <p id="login-error" class="error" role="alert"></p>
+      </form>
+    </section>
+
+    <main id="app" class="hidden">
+      <header class="topbar">
+        <h1>Dragon Bot</h1>
+        <div class="topbar-right">
+          <span id="status" class="status">connecting…</span>
+          <button id="logout" class="ghost">Log out</button>
+        </div>
+      </header>
+
+      <div id="offline-banner" class="banner hidden">
+        The bot is not in a voice channel. Run <code>/summon</code> in Discord.
+      </div>
+
+      <div class="grid">
+        <section class="panel">
+          <h2>Music</h2>
+          <div id="music-current" class="now-playing empty">Nothing playing</div>
+
+          <div class="row">
+            <button id="skip">Skip</button>
+            <button id="stop-music" class="danger">Stop &amp; clear</button>
+          </div>
+
+          <h3>Queue <span id="queue-count" class="muted"></span></h3>
+          <ol id="queue" class="queue"></ol>
+
+          <h3>Add a track</h3>
+          <div class="row">
+            <input id="play-input" list="tracks-list" placeholder="Track name or YouTube URL" />
+            <datalist id="tracks-list"></datalist>
+          </div>
+          <div class="row">
+            <label class="checkbox">
+              <input id="play-loop" type="checkbox" />
+              Loop
+            </label>
+            <button id="play">Queue</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Ambience</h2>
+          <div id="ambience-current" class="now-playing empty">No ambience</div>
+
+          <div class="row">
+            <input id="ambience-input" list="tracks-list" placeholder="Track name or YouTube URL" />
+          </div>
+          <div class="row">
+            <button id="ambience-set">Set</button>
+            <button id="ambience-stop" class="danger">Stop</button>
+          </div>
+
+          <h3>Quick picks</h3>
+          <div id="ambience-board" class="board"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Sound effects</h2>
+          <div class="row">
+            <button id="stop-sfx" class="danger">Silence all effects</button>
+          </div>
+          <div id="sfx-active" class="muted small"></div>
+
+          <h3>Soundboard</h3>
+          <div id="sfx-board" class="board"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Levels</h2>
+          <div class="slider">
+            <label for="vol-music">Music <span id="vol-music-value">70</span>%</label>
+            <input id="vol-music" type="range" min="0" max="100" value="70" />
+          </div>
+          <div class="slider">
+            <label for="vol-ambience">Ambience <span id="vol-ambience-value">50</span>%</label>
+            <input id="vol-ambience" type="range" min="0" max="100" value="50" />
+          </div>
+          <div class="slider">
+            <label for="vol-sfx">Effects <span id="vol-sfx-value">80</span>%</label>
+            <input id="vol-sfx" type="range" min="0" max="100" value="80" />
+          </div>
+
+          <h3>Everything</h3>
+          <button id="stop-all" class="danger wide">Stop all layers</button>
+        </section>
+      </div>
+
+      <p id="toast" class="toast hidden"></p>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
