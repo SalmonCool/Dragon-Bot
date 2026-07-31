@@ -22,6 +22,8 @@ import {
 
 export interface WebConfig extends AuthConfig {
   port: number;
+  /** Interface to bind. Loopback in production, since Caddy fronts it. */
+  host: string;
   /** Set when served behind HTTPS, so the session cookie gets the Secure flag. */
   secure: boolean;
 }
@@ -253,8 +255,8 @@ export function startWebServer(config: WebConfig): Server {
 
   session.on('change', broadcast);
 
-  server.listen(config.port, () => {
-    console.log(`Web UI listening on port ${config.port}`);
+  server.listen(config.port, config.host, () => {
+    console.log(`Web UI listening on ${config.host}:${config.port}`);
   });
 
   return server;

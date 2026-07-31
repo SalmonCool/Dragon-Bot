@@ -112,6 +112,11 @@ All three layers play **simultaneously**. A bot may hold only one voice connecti
 guild, so layers are mixed into a single stream rather than played by separate
 players — see PLAN.md for why this isn't done with ffmpeg's `amix`.
 
+## Deploying
+
+See [DEPLOY.md](DEPLOY.md) for the full VPS setup — hardening, systemd, Caddy for
+automatic TLS, and moving the sound library.
+
 ## Web UI
 
 Opt-in: the server only starts when `WEB_PASSWORD` is set in `.env`. Without it the

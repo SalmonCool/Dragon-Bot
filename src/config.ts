@@ -36,6 +36,7 @@ export function requireGuildId(): string {
 
 export interface WebSettings {
   port: number;
+  host: string;
   password: string;
   secret: string;
   secure: boolean;
@@ -61,6 +62,11 @@ export function webSettings(): WebSettings | undefined {
 
   return {
     port: Number(process.env.WEB_PORT ?? 8080),
+    // Loopback by default. In production the app sits behind Caddy, and binding
+    // 0.0.0.0 would expose the port directly on the public IP — reachable over
+    // plain HTTP, bypassing TLS, with the password in cleartext. Override only
+    // when you genuinely want LAN access (e.g. testing from a phone).
+    host: process.env.WEB_HOST?.trim() || '127.0.0.1',
     password,
     secret,
     // Behind HTTPS (Caddy on the VPS) the cookie must be Secure; on plain-HTTP
