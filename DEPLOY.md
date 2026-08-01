@@ -304,7 +304,32 @@ need the `shortlived` ACME profile, which Caddy still has open issues around. Us
 hostname instead.
 
 Whichever you pick, set `WEB_SECURE=true` in `.env` and restart the bot once HTTPS is
-live.
+live — and not before. Flipping it while still on plain HTTP makes the browser discard
+the session cookie, so login fails in a way that looks like a wrong password.
+
+**If using DuckDNS**, add a keep-alive cron job. DuckDNS removes subdomains after
+roughly 30 days with no update, and a static VPS IP never sends one — so the domain
+would quietly disappear about a month after you set it up:
+
+```bash
+crontab -e
+```
+
+```
+*/5 * * * * curl -fsS "https://www.duckdns.org/update?domains=YOURNAME&token=YOURTOKEN&ip=" >/dev/null
+```
+
+An empty `ip=` tells DuckDNS to use the requesting address, so this also re-points the
+domain automatically if the droplet's IP ever changes.
+
+### Verify DNS before reloading Caddy
+
+```bash
+dig +short yourname.duckdns.org
+```
+
+It must return the droplet's IP. Caddy proves domain ownership over HTTP to obtain a
+certificate, so reloading before DNS resolves produces noisy, misleading failures.
 
 ```bash
 sudo nano /etc/caddy/Caddyfile
