@@ -55,8 +55,14 @@ export const storage: Command = {
 
     if (sub === 'status') {
       const info = await report();
+      const { usedBytes, capBytes } = info.cache;
+      const percent = capBytes > 0 ? Math.round((usedBytes / capBytes) * 100) : 0;
+
       const lines = [
         `**Disk** — ${formatBytes(info.freeBytes)} free of ${formatBytes(info.totalBytes)}`,
+        capBytes > 0
+          ? `**Download cache** — ${formatBytes(usedBytes)} of ${formatBytes(capBytes)} (${percent}%)`
+          : `**Download cache** — ${formatBytes(usedBytes)} (no limit set)`,
         '',
         ...info.categories.map(
           (entry) =>
@@ -64,6 +70,15 @@ export const storage: Command = {
             `${entry.files} file(s), ${entry.downloaded} downloaded`,
         ),
       ];
+
+      if (capBytes > 0 && percent >= 80) {
+        lines.push(
+          '',
+          '*Nearing the cache limit — least-recently-played downloads will be ' +
+            'evicted automatically. Hand-added sounds are never touched.*',
+        );
+      }
+
       await interaction.reply(lines.join('\n'));
       return;
     }

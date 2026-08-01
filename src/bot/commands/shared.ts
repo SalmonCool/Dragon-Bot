@@ -1,7 +1,7 @@
 import { MessageFlags, type ChatInputCommandInteraction } from 'discord.js';
 import { connectTo, getConnection } from '../../audio/connection.js';
 import { findSound } from '../../audio/library.js';
-import { touchEntry } from '../../audio/manifest.js';
+import { touchByName, touchEntry } from '../../audio/manifest.js';
 import type { Category } from '../../audio/paths.js';
 import { session } from '../../audio/session.js';
 import { isUrl, ResolveError, resolveUrl } from '../../sources/youtube.js';
@@ -41,6 +41,9 @@ export async function resolveSound(
       `No sound named \`${input}\` in \`${category}/\`, and that isn't a URL.`,
     );
   }
+
+  // Feeds the LRU signal used by cache eviction. No-op for hand-added sounds.
+  await touchByName(sound.name);
 
   return { name: sound.name, title: sound.title, path: sound.path, fresh: false };
 }

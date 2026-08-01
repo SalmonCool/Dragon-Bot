@@ -233,6 +233,17 @@ export class AudioSession extends EventEmitter {
     this.changed();
   }
 
+  /**
+   * Files currently being read by an ffmpeg process.
+   *
+   * Cache eviction consults this so it never deletes a track mid-playback. On Linux
+   * an unlinked open file keeps working until the handle closes, but a looping
+   * ambience bed would then vanish on restart with no obvious cause.
+   */
+  get activeFilePaths(): Set<string> {
+    return new Set(this.mixer.active.map((layer) => layer.filePath));
+  }
+
   get activeSfx(): { id: string; label: string }[] {
     return this.mixer.active
       .filter((layer) => layer.kind === 'sfx')

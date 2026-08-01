@@ -1,5 +1,5 @@
 import { findSound } from '../audio/library.js';
-import { touchEntry } from '../audio/manifest.js';
+import { touchByName, touchEntry } from '../audio/manifest.js';
 import type { Category } from '../audio/paths.js';
 import { isUrl, ResolveError, resolveUrl } from '../sources/youtube.js';
 
@@ -27,6 +27,9 @@ export async function resolveForWeb(category: Category, input: string): Promise<
   if (!sound) {
     throw new ResolveError(`No sound named "${input}" in ${category}/.`);
   }
+
+  // Feeds the LRU signal used by cache eviction. No-op for hand-added sounds.
+  await touchByName(sound.name);
 
   return { name: sound.name, title: sound.title, path: sound.path };
 }

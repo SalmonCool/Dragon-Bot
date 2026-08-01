@@ -168,6 +168,24 @@ touch YouTube again.
 - Downloads are recorded in `sounds/.manifest.json`, which is what lets
   `/storage clear` remove only bot-downloaded files and leave your own alone.
 
+### Cache eviction
+
+Downloads are capped by `CACHE_MAX_GB` (default 10, `0` disables). After each new
+download, if the total exceeds the cap, least-recently-played downloads are deleted
+until it fits.
+
+Three rules make this safe to leave running:
+
+- **Only downloads count and only downloads are deleted.** Sounds you added by hand
+  are invisible to the cap — the bot manages its own footprint and nothing else.
+- **Files currently playing are skipped**, even when they are the oldest. A looping
+  ambience bed will not be deleted out from under a session.
+- **A track's download counts as a use**, so a new arrival is never the first thing
+  evicted by its own download.
+
+Playing anything updates its last-used time, whether by name or by URL. `/storage
+status` shows usage against the cap and warns past 80%.
+
 ### Bot detection and cookies
 
 `Sign in to confirm you're not a bot` means YouTube has flagged the request as

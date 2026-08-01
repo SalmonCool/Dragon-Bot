@@ -125,6 +125,7 @@ Fill in:
 | `WEB_HOST` | `127.0.0.1` |
 | `WEB_SECURE` | **`true`** — you're behind HTTPS now |
 | `YTDLP_COOKIES` | Optional, see step 8 |
+| `CACHE_MAX_GB` | `10` on a 25 GB droplet — see below |
 
 Generate a fresh secret rather than reusing your local one:
 
@@ -299,6 +300,16 @@ Update yt-dlp periodically; YouTube breaks it regularly:
 ```bash
 sudo yt-dlp -U
 ```
+
+### Cache sizing
+
+`CACHE_MAX_GB` caps downloaded audio. On a 25 GB droplet, budget roughly 8 GB for the
+OS, `node_modules`, and headroom, which leaves `10` as a comfortable cap — about 100
+long ambience tracks.
+
+Only downloads count toward it and only downloads are evicted; anything you copied up
+by hand in step 5 is exempt and will never be deleted. Files currently playing are
+skipped. Set `0` to disable eviction if you would rather manage space yourself.
 
 Check disk before a big session — long ambience tracks run ~100 MB each:
 

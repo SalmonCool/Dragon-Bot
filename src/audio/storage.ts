@@ -1,5 +1,6 @@
 import { statfs, unlink } from 'node:fs/promises';
 import path from 'node:path';
+import { cacheLimitBytes, downloadedBytes } from './eviction.js';
 import { categorySize, listSounds } from './library.js';
 import { allEntries, entriesIn, removeEntries } from './manifest.js';
 import { categoryDir, SOUNDS_DIR, type Category } from './paths.js';
@@ -17,6 +18,8 @@ export interface StorageReport {
   freeBytes: number;
   totalBytes: number;
   categories: { category: Category; bytes: number; files: number; downloaded: number }[];
+  /** Downloaded bytes against the eviction cap. `capBytes` of 0 means disabled. */
+  cache: { usedBytes: number; capBytes: number };
 }
 
 export function formatBytes(bytes: number): string {
@@ -52,6 +55,7 @@ export async function report(): Promise<StorageReport> {
     freeBytes: stats.bavail * stats.bsize,
     totalBytes: stats.blocks * stats.bsize,
     categories,
+    cache: { usedBytes: await downloadedBytes(), capBytes: cacheLimitBytes() },
   };
 }
 

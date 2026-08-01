@@ -2,6 +2,7 @@ import { execFile } from 'node:child_process';
 import { stat } from 'node:fs/promises';
 import path from 'node:path';
 import { promisify } from 'node:util';
+import { enforceCacheLimit } from '../audio/eviction.js';
 import { addEntry, findById } from '../audio/manifest.js';
 import { categoryDir, type Category } from '../audio/paths.js';
 
@@ -216,6 +217,15 @@ export async function resolveUrl(url: string, category: Category): Promise<Resol
     bytes: info.size,
     durationSeconds: metadata.duration ?? 0,
     addedAt: new Date().toISOString(),
+    // Count the download itself as a use, so a brand-new track isn't the first
+    // thing evicted by its own arrival.
+    lastPlayedAt: new Date().toISOString(),
+  });
+
+  // Enforce the cap right after growth. Failure here must not fail the playback
+  // the user actually asked for.
+  await enforceCacheLimit().catch((error) => {
+    console.error('Cache eviction failed:', error);
   });
 
   return {

@@ -43,6 +43,8 @@ export class Layer {
   readonly id: string;
   readonly kind: LayerKind;
   readonly label: string;
+  /** Kept so cache eviction can avoid deleting a file that is currently playing. */
+  readonly filePath: string;
   gain: number;
 
   private readonly process: ChildProcessWithoutNullStreams;
@@ -55,6 +57,7 @@ export class Layer {
     this.id = options.id;
     this.kind = options.kind;
     this.label = options.label;
+    this.filePath = options.filePath;
     this.gain = options.gain ?? 1;
 
     if (!ffmpegPath) {

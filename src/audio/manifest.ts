@@ -102,3 +102,15 @@ export async function findByName(name: string): Promise<ManifestEntry | undefine
   const data = await load();
   return data.entries.find((entry) => entry.file.replace(/\.[^.]+$/, '') === name);
 }
+
+/**
+ * Records a play for a library name, if that name is a tracked download.
+ *
+ * Most playback goes through autocomplete by name rather than by URL, so without
+ * this the LRU signal would only ever be updated on the rare re-paste of a link —
+ * and eviction would silently degrade into "oldest download first".
+ */
+export async function touchByName(name: string): Promise<void> {
+  const entry = await findByName(name);
+  if (entry) await touchEntry(entry.id);
+}
