@@ -228,7 +228,39 @@ You want to see `Audio dependencies OK`, `yt-dlp ... available`, `Web UI listeni
 
 ---
 
+## 6b. Check it works before setting up DNS
+
+DigitalOcean gives you an IP, not a hostname, so there is no URL yet. You don't need
+one to verify the deploy — the app binds loopback, so an SSH tunnel reaches it:
+
+```bash
+ssh -L 8080:127.0.0.1:8080 deploy@203.0.113.10
+```
+
+Leave that running, then open `http://localhost:8080` locally. The traffic goes over
+the SSH connection, so nothing is exposed publicly. Keep `WEB_SECURE=false` for this,
+since the browser end is plain HTTP.
+
+Confirm the library loaded and the soundboards are populated, then continue.
+
 ## 7. Put Caddy in front
+
+### Choosing a hostname
+
+Caddy needs a hostname to obtain a certificate. Pick one:
+
+| Option | URL | Notes |
+|---|---|---|
+| Your own domain | `dragon.yourdomain.com` | Best. Add an A record to the droplet IP |
+| DuckDNS | `yourname.duckdns.org` | Free, ~2 minutes. Your IP is static, so no dynamic updating needed |
+| sslip.io | `203-0-113-10.sslip.io` | No signup at all — the hostname *is* the IP |
+
+Let's Encrypt now issues certificates for bare IPs, but they last only 160 hours and
+need the `shortlived` ACME profile, which Caddy still has open issues around. Use a
+hostname instead.
+
+Whichever you pick, set `WEB_SECURE=true` in `.env` and restart the bot once HTTPS is
+live.
 
 ```bash
 sudo nano /etc/caddy/Caddyfile
