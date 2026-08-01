@@ -61,11 +61,20 @@ sudo apt update && sudo apt install -y unattended-upgrades && sudo dpkg-reconfig
 
 ## 2. Install dependencies
 
-Node 22:
+Node 22, git, and a C++ toolchain:
 
 ```bash
-curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt install -y nodejs git
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt install -y nodejs git build-essential
 ```
+
+`build-essential` is **required on Ubuntu 24.04**, which ships glibc 2.39.
+`@discordjs/opus` publishes prebuilt binaries for glibc 2.31 and 2.35 only, and
+node-pre-gyp matches the version exactly rather than falling back to an older build —
+so on 24.04 it always compiles from source. Without a compiler, `npm ci` fails with
+`gyp ERR! stack Error: not found: make`.
+
+(On Ubuntu 22.04 the 2.35 prebuild matches and nothing is compiled, but installing the
+toolchain is harmless either way.)
 
 yt-dlp, as the standalone Linux binary — self-contained, and updatable independently
 of this project, which matters because YouTube changes frequently:
@@ -100,6 +109,15 @@ sudo mkdir -p /opt/dragon-bot && sudo chown deploy:deploy /opt/dragon-bot
 
 ```bash
 git clone https://github.com/SalmonCool/Dragon-Bot.git /opt/dragon-bot && cd /opt/dragon-bot && npm ci && npm run build
+```
+
+Run this as `deploy`, **not** as root or with `sudo`. npm writes caches into the
+invoking user's home, and root-owned files under `/opt/dragon-bot` will stop the
+service — which runs as `deploy` — from writing downloads into `sounds/`. If you
+already ran it as root:
+
+```bash
+sudo chown -R deploy:deploy /opt/dragon-bot
 ```
 
 `npm ci` installs devDependencies too — TypeScript is needed for `npm run build`. Don't
@@ -371,3 +389,6 @@ sudo journalctl --vacuum-size=200M
 | Bot online, no audio | Check `Connect` and `Speak` in that voice channel |
 | Bot-detection errors on download | Add cookies (step 8), or sideload the file with `scp` |
 | Service restarts in a loop | Almost always a bad `.env` — the log names the missing variable |
+| `npm ci` fails: `not found: make` | Missing `build-essential` — see step 2 |
+| `npm ci` fails: 404 fetching an opus `.tar.gz` | Expected on Ubuntu 24.04; it compiles instead, which needs `build-essential` |
+| Downloads fail with `EACCES` on `sounds/` | `/opt/dragon-bot` is root-owned — `sudo chown -R deploy:deploy /opt/dragon-bot` |
