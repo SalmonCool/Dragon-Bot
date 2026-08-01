@@ -83,6 +83,32 @@ of this project, which matters because YouTube changes frequently:
 sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux -o /usr/local/bin/yt-dlp && sudo chmod a+rx /usr/local/bin/yt-dlp
 ```
 
+**yt-dlp also needs a JavaScript runtime.** YouTube hides stream URLs behind a JS
+challenge; without a runtime to solve it every audio format is filtered out and
+yt-dlp reports `n challenge solving failed` followed by `Only images are available`.
+That looks like a format problem but is not one.
+
+Only Deno is enabled by default, so install it:
+
+```bash
+sudo apt install -y unzip && curl -fsSL https://deno.land/install.sh | sh
+```
+
+```bash
+sudo mv ~/.deno/bin/deno /usr/local/bin/ && deno --version
+```
+
+Moving it to `/usr/local/bin` matters: that is in systemd's default PATH, so the
+service finds it. Left in `~/.deno/bin` it works in your shell and fails in the
+service.
+
+Node 22 can solve the challenge too, via `--js-runtimes node`, but Deno is the
+default (no flag, so no code change) and sandboxes the code with no filesystem or
+network access — worth having for JavaScript that YouTube supplies and you execute.
+
+The `yt-dlp_linux` binary bundles the EJS solver scripts, so only the runtime is
+needed. A `pip` install would also require `yt-dlp[default]`.
+
 Caddy, for automatic TLS:
 
 ```bash
@@ -388,6 +414,10 @@ sudo journalctl --vacuum-size=200M
 | Commands missing in Discord | `register-commands.js` not run since they changed |
 | Bot online, no audio | Check `Connect` and `Speak` in that voice channel |
 | Bot-detection errors on download | Add cookies (step 8), or sideload the file with `scp` |
+| `n challenge solving failed` / `Only images are available` | No JS runtime — install Deno (step 2). Not a format problem |
+| `Requested format is not available` | Usually the same missing-runtime cause; check for the `n challenge` warning above it |
+| Deno installer: `unzip or 7z is required` | `sudo apt install -y unzip` first |
+| yt-dlp works in your shell, fails in the service | A binary is outside systemd's PATH — put it in `/usr/local/bin` |
 | Service restarts in a loop | Almost always a bad `.env` — the log names the missing variable |
 | `npm ci` fails: `not found: make` | Missing `build-essential` — see step 2 |
 | `npm ci` fails: 404 fetching an opus `.tar.gz` | Expected on Ubuntu 24.04; it compiles instead, which needs `build-essential` |
