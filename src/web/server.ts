@@ -5,6 +5,7 @@ import { WebSocketServer, type WebSocket } from 'ws';
 import { listSounds } from '../audio/library.js';
 import type { LayerKind } from '../audio/layer.js';
 import { session } from '../audio/session.js';
+import { webPublicUrl } from '../config.js';
 import { buildSnapshot } from '../state/snapshot.js';
 import { ResolveError } from '../sources/youtube.js';
 import { resolveForWeb } from './playback.js';
@@ -256,7 +257,11 @@ export function startWebServer(config: WebConfig): Server {
   session.on('change', broadcast);
 
   server.listen(config.port, config.host, () => {
-    console.log(`Web UI listening on ${config.host}:${config.port}`);
+    const publicUrl = webPublicUrl();
+    console.log(
+      `Web UI listening on ${config.host}:${config.port}` +
+        (publicUrl ? ` (public: ${publicUrl})` : ' (WEB_URL not set — /panel disabled)'),
+    );
   });
 
   return server;

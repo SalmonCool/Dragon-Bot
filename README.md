@@ -76,6 +76,7 @@ it is always current.
 | Command | What it does |
 |---|---|
 | `/help` | Lists every command, grouped |
+| `/panel` | Posts the web control panel link (needs `WEB_URL`) |
 | `/ping` | Health check — replies with gateway latency |
 | `/summon` | Joins your current voice channel |
 | `/dismiss` | Leaves, stopping all audio |

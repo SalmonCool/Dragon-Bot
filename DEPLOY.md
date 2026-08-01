@@ -168,6 +168,7 @@ Fill in:
 | `WEB_SECRET` | Fresh random value, see below |
 | `WEB_HOST` | `127.0.0.1` |
 | `WEB_SECURE` | **`true`** — you're behind HTTPS now |
+| `WEB_URL` | Your public URL, e.g. `https://yourname.duckdns.org` — powers `/panel` |
 | `YTDLP_COOKIES` | Optional, see step 8 |
 | `CACHE_MAX_GB` | `10` on a 25 GB droplet — see below |
 

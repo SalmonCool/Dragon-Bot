@@ -34,6 +34,22 @@ export function requireGuildId(): string {
   return required('DISCORD_GUILD_ID');
 }
 
+/**
+ * Public URL of the web UI, for `/panel` to hand out.
+ *
+ * Cannot be derived at runtime: behind a reverse proxy the app only ever sees
+ * `127.0.0.1:8080` and has no idea what hostname reached it.
+ *
+ * Read on each call rather than at module scope — see the note in sources/youtube.ts
+ * about env being captured before dotenv has run.
+ */
+export function webPublicUrl(): string | undefined {
+  const url = process.env.WEB_URL?.trim();
+  if (!url) return undefined;
+  // Trailing slashes make for ugly links when appended to.
+  return url.replace(/\/+$/, '');
+}
+
 export interface WebSettings {
   port: number;
   host: string;
