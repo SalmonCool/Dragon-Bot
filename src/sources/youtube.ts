@@ -21,8 +21,19 @@ const run = promisify(execFile);
 /** Rejected above this. Long ambience beds are common, 10-hour videos are not welcome. */
 export const MAX_DURATION_SECONDS = 3 * 60 * 60;
 
+/**
+ * Environment is read on every call, never captured at module scope.
+ *
+ * This module sits earlier in the import graph than config.ts, which is what loads
+ * dotenv — so a module-level `process.env.X` here reads the value *before* .env has
+ * been parsed and silently gets undefined. Reading lazily makes correctness
+ * independent of import order.
+ */
+
 /** yt-dlp changes often; keep it updatable independently of this project. */
-const YTDLP = process.env.YTDLP_PATH?.trim() || 'yt-dlp';
+function ytdlpBinary(): string {
+  return process.env.YTDLP_PATH?.trim() || 'yt-dlp';
+}
 
 /**
  * Optional path to a Netscape-format cookies.txt exported from a logged-in browser.
@@ -34,10 +45,13 @@ const YTDLP = process.env.YTDLP_PATH?.trim() || 'yt-dlp';
  * The file contains live session cookies, so it is effectively account credentials:
  * keep it out of version control and readable only by the bot's user.
  */
-const COOKIES_PATH = process.env.YTDLP_COOKIES?.trim();
+function cookiesPath(): string | undefined {
+  return process.env.YTDLP_COOKIES?.trim() || undefined;
+}
 
 function cookieArgs(): string[] {
-  return COOKIES_PATH ? ['--cookies', COOKIES_PATH] : [];
+  const path = cookiesPath();
+  return path ? ['--cookies', path] : [];
 }
 
 const MAX_BUFFER = 32 * 1024 * 1024;
@@ -82,7 +96,7 @@ function slugify(title: string): string {
 
 async function ytdlp(args: string[]): Promise<string> {
   try {
-    const { stdout } = await run(YTDLP, args, { maxBuffer: MAX_BUFFER });
+    const { stdout } = await run(ytdlpBinary(), args, { maxBuffer: MAX_BUFFER });
     return stdout;
   } catch (error) {
     const stderr = (error as { stderr?: string }).stderr ?? '';
@@ -99,7 +113,7 @@ async function ytdlp(args: string[]): Promise<string> {
     // bot-detection message in particular is one you need to see verbatim.
     if (/Sign in to confirm|not a bot/i.test(stderr)) {
       throw new ResolveError(
-        COOKIES_PATH
+        cookiesPath()
           ? 'YouTube is still blocking this request despite the cookies file. The ' +
             'cookies may have expired — export a fresh cookies.txt and try again.'
           : 'YouTube is blocking this request as automated traffic, which is common ' +
@@ -249,21 +263,22 @@ export type CookieStatus =
  * as a confusing bot-detection error — so it is worth catching at boot.
  */
 export async function cookieStatus(): Promise<CookieStatus> {
-  if (!COOKIES_PATH) return { configured: false };
+  const path = cookiesPath();
+  if (!path) return { configured: false };
 
   const { access } = await import('node:fs/promises');
-  const readable = await access(COOKIES_PATH).then(
+  const readable = await access(path).then(
     () => true,
     () => false,
   );
 
-  return { configured: true, path: COOKIES_PATH, readable };
+  return { configured: true, path, readable };
 }
 
 /** Whether yt-dlp is reachable — used by the startup diagnostic. */
 export async function ytdlpVersion(): Promise<string | undefined> {
   try {
-    const { stdout } = await run(YTDLP, ['--version'], { maxBuffer: 1024 * 64 });
+    const { stdout } = await run(ytdlpBinary(), ['--version'], { maxBuffer: 1024 * 64 });
     return stdout.trim();
   } catch {
     return undefined;

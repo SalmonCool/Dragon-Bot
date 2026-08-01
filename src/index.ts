@@ -1,3 +1,7 @@
+// Must be first: ESM evaluates imports depth-first, so any module below that reads
+// process.env at module scope would otherwise run before .env is parsed.
+import 'dotenv/config';
+
 import { startBot } from './bot/client.js';
 import { webSettings } from './config.js';
 import { startWebServer } from './web/server.js';
