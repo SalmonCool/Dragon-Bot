@@ -1,14 +1,25 @@
 :root {
-  --bg: #14100f;
-  --panel: #1e1917;
-  --panel-2: #272020;
-  --line: #3a2f2c;
-  --text: #ece4dc;
-  --muted: #a2938a;
-  --accent: #c2452d;
-  --accent-soft: #8f3422;
-  --ok: #6f9e5a;
-  --danger: #a33a2c;
+  /* Black for the page, greys stepping up for panels, bright red for text. */
+  --bg: #000000;
+  --panel: #171717;
+  /* Deliberately only slightly lighter than --panel: inputs and list items carry
+     typed text, and a lighter grey drops red below the 4.5:1 readable threshold. */
+  --panel-2: #1e1e1e;
+  --line: #383838;
+
+  --text: #ff2d2d;
+  /* Desaturated red rather than plain grey, so secondary text recedes without
+     reading as a different theme. Light enough to stay above 4.5:1 on a panel. */
+  --muted: #b07f7f;
+
+  --accent: #ff2d2d;
+  --accent-soft: #b31d1d;
+
+  /* Kept green: "live" and "down" need to differ by more than shade when the
+     whole interface is already red. Both are labelled, so the meaning never
+     depends on colour alone. */
+  --ok: #5fae54;
+  --danger: #ff4d4d;
 }
 
 * {
@@ -33,7 +44,7 @@ body {
   font-size: 13px;
 }
 .error {
-  color: #e77a68;
+  color: var(--danger);
   min-height: 1.2em;
   margin: 8px 0 0;
   font-size: 14px;
@@ -108,20 +119,23 @@ body {
 }
 .status.live {
   color: var(--ok);
-  border-color: #3d5133;
+  border-color: #33512f;
 }
 .status.down {
-  color: #e77a68;
-  border-color: #5b312a;
+  color: var(--danger);
+  border-color: #5b2a2a;
 }
 
 .banner {
   margin: 16px 20px 0;
   padding: 12px 16px;
   border-radius: 8px;
-  background: #3a2a16;
-  border: 1px solid #5d4420;
-  color: #f0d5a8;
+  background: var(--panel-2);
+  /* Thick left edge rather than a coloured fill: on a red-on-black interface a
+     tinted background would read as decoration instead of a warning. */
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  color: var(--text);
   font-size: 14px;
 }
 .banner code {
@@ -182,6 +196,12 @@ input:not([type]) {
   border-radius: 8px;
   padding: 9px 12px;
   font: inherit;
+}
+
+/* The browser default placeholder grey is nearly invisible on these panels. */
+::placeholder {
+  color: var(--muted);
+  opacity: 1;
 }
 
 input:focus-visible,
