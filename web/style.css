@@ -228,17 +228,17 @@ button:disabled {
 }
 button.ghost {
   background: transparent;
-  border-color: var(--line);
-  color: var(--muted);
+  border-color: var(--accent);
+  color: var(--text);
 }
 button.ghost:hover {
-  background: var(--panel-2);
-  color: var(--text);
+  background: var(--accent-soft);
+  color: #fff;
 }
 button.danger {
   background: transparent;
   border-color: var(--danger);
-  color: #e08878;
+  color: var(--danger);
 }
 button.danger:hover:not(:disabled) {
   background: var(--danger);
@@ -383,5 +383,5 @@ button.wide {
 }
 .toast.bad {
   border-color: var(--danger);
-  color: #e08878;
+  color: var(--danger);
 }
