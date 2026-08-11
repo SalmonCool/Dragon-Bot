@@ -8,11 +8,11 @@ import type { Command } from '../command.js';
 export const sfx: Command = {
   data: new SlashCommandBuilder()
     .setName('sfx')
-    .setDescription('Fire a one-shot sound effect over whatever is playing.')
+    .setDescription('One-shot effect over whatever is playing. Library, YouTube, or Spotify.')
     .addStringOption((option) =>
       option
         .setName('sound')
-        .setDescription('Effect name or YouTube URL')
+        .setDescription('Effect name, YouTube URL, or Spotify track link')
         .setRequired(true)
         .setAutocomplete(true),
     ),

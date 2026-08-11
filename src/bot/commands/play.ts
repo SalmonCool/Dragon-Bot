@@ -1,4 +1,4 @@
-import { MessageFlags, SlashCommandBuilder } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
 import { suggestSounds } from '../../audio/library.js';
 import { session } from '../../audio/session.js';
 import { ResolveError } from '../../sources/youtube.js';
@@ -8,11 +8,11 @@ import type { Command } from '../command.js';
 export const play: Command = {
   data: new SlashCommandBuilder()
     .setName('play')
-    .setDescription('Queue a music track from the library or a YouTube URL.')
+    .setDescription('Queue music from the library, a YouTube URL, or a Spotify track link.')
     .addStringOption((option) =>
       option
         .setName('track')
-        .setDescription('Track name or YouTube URL')
+        .setDescription('Track name, YouTube URL, or Spotify track link')
         .setRequired(true)
         .setAutocomplete(true),
     )

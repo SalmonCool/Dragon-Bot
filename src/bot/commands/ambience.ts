@@ -8,11 +8,11 @@ import type { Command } from '../command.js';
 export const ambience: Command = {
   data: new SlashCommandBuilder()
     .setName('ambience')
-    .setDescription('Set a looping ambient bed. Use "stop" to clear it.')
+    .setDescription('Looping ambient bed from the library, YouTube, or Spotify. "stop" clears it.')
     .addStringOption((option) =>
       option
         .setName('sound')
-        .setDescription('Track name, YouTube URL, or "stop"')
+        .setDescription('Track name, YouTube or Spotify link, or "stop"')
         .setRequired(true)
         .setAutocomplete(true),
     ),

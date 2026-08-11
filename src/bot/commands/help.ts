@@ -61,8 +61,14 @@ export const help: Command = {
       .setTitle('Dragon Bot')
       .setDescription(
         'Three audio layers play at once: a looping **ambience** bed, a **music** ' +
-          'queue, and one-shot **sfx** over the top.\n' +
-          '`/play`, `/ambience`, and `/sfx` accept a library name or a YouTube URL.',
+          'queue, and one-shot **sfx** over the top.\n\n' +
+          '`/play`, `/ambience` and `/sfx` accept a library name, a **YouTube** URL, ' +
+          'or a **Spotify track** link.\n\n' +
+          '⚠️ **Spotify links are matched, not played.** Spotify audio cannot be ' +
+          'downloaded, so the link is only used to look up the artist and title, ' +
+          'which is then searched on YouTube. What you hear may be a different mix, ' +
+          'a live version, or a cover — check `/nowplaying`. Obscure tracks may find ' +
+          'no match at all, and playlist or album links are not supported.',
       )
       .setColor(0xa03030);
 
