@@ -187,6 +187,33 @@ Three rules make this safe to leave running:
 Playing anything updates its last-used time, whether by name or by URL. `/storage
 status` shows usage against the cap and warns past 80%.
 
+## Spotify
+
+`/play`, `/ambience`, and `/sfx` also accept Spotify **track** links, in any of these
+forms:
+
+```
+https://open.spotify.com/track/0nD62ke95NJvAI8chsRjRg?si=...
+https://open.spotify.com/intl-de/track/0nD62ke95NJvAI8chsRjRg
+spotify:track:0nD62ke95NJvAI8chsRjRg
+```
+
+**The audio does not come from Spotify.** Spotify streams are DRM-protected and only
+playable through their own client with a Premium session — nothing can download them.
+A link is used purely to look up the artist and title, which is then searched on
+YouTube and the top result downloaded. So what plays is a *match*, and may be a
+different mix, a live take, or a cover. Check with `/nowplaying` if it matters.
+
+Playlist, album, and podcast links are rejected with a message explaining why — only
+individual tracks work.
+
+No API credentials are needed. The title comes from Spotify's public oEmbed endpoint
+and the artists from the embed page's inline JSON.
+
+Resolved tracks record their Spotify id in the manifest, so pasting the same link
+again is served straight from the library — no second search, and no chance of landing
+on a different video than last time.
+
 ### Bot detection and cookies
 
 `Sign in to confirm you're not a bot` means YouTube has flagged the request as

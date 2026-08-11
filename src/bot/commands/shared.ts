@@ -4,7 +4,8 @@ import { findSound } from '../../audio/library.js';
 import { touchByName, touchEntry } from '../../audio/manifest.js';
 import type { Category } from '../../audio/paths.js';
 import { session } from '../../audio/session.js';
-import { isUrl, ResolveError, resolveUrl } from '../../sources/youtube.js';
+import { isSpotifyUrl, resolveSpotifyTrack } from '../../sources/spotify.js';
+import { isUrl, ResolveError, resolveSearch, resolveUrl } from '../../sources/youtube.js';
 
 export interface PlayableSound {
   name: string;
@@ -24,6 +25,20 @@ export async function resolveSound(
   category: Category,
   input: string,
 ): Promise<PlayableSound> {
+  // Spotify audio is DRM-protected and cannot be downloaded, so the link is used
+  // only to look up artist and title, and the match comes from YouTube.
+  if (isSpotifyUrl(input)) {
+    const track = await resolveSpotifyTrack(input);
+    const found = await resolveSearch(track.query, category, track.spotifyId);
+    if (found.cached) await touchEntry(found.id);
+    return {
+      name: found.name,
+      title: found.title,
+      path: found.path,
+      fresh: !found.cached,
+    };
+  }
+
   if (isUrl(input)) {
     const track = await resolveUrl(input, category);
     if (track.cached) await touchEntry(track.id);

@@ -24,6 +24,14 @@ export interface ManifestEntry {
   durationSeconds: number;
   addedAt: string;
   lastPlayedAt?: string;
+  /**
+   * Spotify track id, when this was resolved from a Spotify link.
+   *
+   * Stored as an alias so pasting the same Spotify link again hits the cache
+   * directly, instead of re-running a YouTube search that might land on a
+   * different video than last time.
+   */
+  spotifyId?: string;
 }
 
 interface ManifestData {
@@ -72,6 +80,12 @@ export async function entriesIn(category: Category): Promise<ManifestEntry[]> {
 
 export async function findById(id: string): Promise<ManifestEntry | undefined> {
   return (await load()).entries.find((entry) => entry.id === id);
+}
+
+export async function findBySpotifyId(
+  spotifyId: string,
+): Promise<ManifestEntry | undefined> {
+  return (await load()).entries.find((entry) => entry.spotifyId === spotifyId);
 }
 
 export async function addEntry(entry: ManifestEntry): Promise<void> {

@@ -3,7 +3,12 @@ import { stat } from 'node:fs/promises';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { enforceCacheLimit } from '../audio/eviction.js';
-import { addEntry, findById } from '../audio/manifest.js';
+import {
+  addEntry,
+  findById,
+  findBySpotifyId,
+  type ManifestEntry,
+} from '../audio/manifest.js';
 import { categoryDir, type Category } from '../audio/paths.js';
 
 const run = promisify(execFile);
@@ -141,11 +146,24 @@ async function fetchMetadata(url: string): Promise<YtDlpMetadata> {
     url,
   ]);
 
+  let parsed: YtDlpMetadata & { entries?: YtDlpMetadata[] };
   try {
-    return JSON.parse(stdout) as YtDlpMetadata;
+    parsed = JSON.parse(stdout) as YtDlpMetadata & { entries?: YtDlpMetadata[] };
   } catch {
     throw new ResolveError('Could not read video metadata from yt-dlp.');
   }
+
+  // `ytsearch1:` returns a playlist-shaped object rather than a single video, so
+  // unwrap the first entry when searching.
+  if (parsed.entries) {
+    const first = parsed.entries[0];
+    if (!first) {
+      throw new ResolveError('No results found for that track on YouTube.');
+    }
+    return first;
+  }
+
+  return parsed;
 }
 
 function assertPlayable(metadata: YtDlpMetadata): void {
@@ -169,6 +187,25 @@ function assertPlayable(metadata: YtDlpMetadata): void {
   }
 }
 
+/** Returns the cached file for a manifest entry, or undefined if it has vanished. */
+async function fromCache(
+  entry: ManifestEntry,
+  category: Category,
+): Promise<ResolvedTrack | undefined> {
+  const absolute = path.join(categoryDir(category), path.basename(entry.file));
+  const onDisk = await stat(absolute).catch(() => undefined);
+  if (!onDisk) return undefined;
+
+  return {
+    id: entry.id,
+    title: entry.title,
+    durationSeconds: entry.durationSeconds,
+    path: absolute,
+    name: entry.file.replace(/\.[^.]+$/, ''),
+    cached: true,
+  };
+}
+
 /**
  * Downloads a URL into the given category, or returns the existing file if it has
  * already been fetched.
@@ -179,22 +216,60 @@ export async function resolveUrl(url: string, category: Category): Promise<Resol
 
   const existing = await findById(metadata.id);
   if (existing) {
-    const absolute = path.join(categoryDir(category), path.basename(existing.file));
-    const onDisk = await stat(absolute).catch(() => undefined);
-
-    if (onDisk) {
-      return {
-        id: existing.id,
-        title: existing.title,
-        durationSeconds: existing.durationSeconds,
-        path: absolute,
-        name: existing.file.replace(/\.[^.]+$/, ''),
-        cached: true,
-      };
-    }
+    const cached = await fromCache(existing, category);
+    if (cached) return cached;
     // Manifest says we have it but the file is gone — fall through and re-download.
   }
 
+  return download(metadata, category, url);
+}
+
+/**
+ * Finds a track on YouTube by search and downloads the top result.
+ *
+ * Used for Spotify links, whose audio cannot be downloaded directly. The search is
+ * resolved to a video id first and then downloaded by canonical URL, so the file
+ * that lands is provably the one whose metadata we checked — searching twice could
+ * otherwise return different results.
+ */
+export async function resolveSearch(
+  query: string,
+  category: Category,
+  spotifyId?: string,
+): Promise<ResolvedTrack> {
+  if (spotifyId) {
+    const known = await findBySpotifyId(spotifyId);
+    if (known) {
+      const cached = await fromCache(known, category);
+      if (cached) return cached;
+    }
+  }
+
+  const metadata = await fetchMetadata(`ytsearch1:${query}`);
+  assertPlayable(metadata);
+
+  const existing = await findById(metadata.id);
+  if (existing) {
+    const cached = await fromCache(existing, category);
+    if (cached) {
+      // Same video reached by a new route — record the alias so next time is instant.
+      if (spotifyId && !existing.spotifyId) {
+        await addEntry({ ...existing, spotifyId });
+      }
+      return cached;
+    }
+  }
+
+  return download(metadata, category, `https://www.youtube.com/watch?v=${metadata.id}`, spotifyId);
+}
+
+async function download(
+  metadata: YtDlpMetadata,
+  category: Category,
+  source: string,
+  spotifyId?: string,
+): Promise<ResolvedTrack> {
+  const url = source;
   const base = `${slugify(metadata.title)}-${metadata.id}`;
   const outputTemplate = path.join(categoryDir(category), `${base}.%(ext)s`);
 
@@ -234,6 +309,7 @@ export async function resolveUrl(url: string, category: Category): Promise<Resol
     // Count the download itself as a use, so a brand-new track isn't the first
     // thing evicted by its own arrival.
     lastPlayedAt: new Date().toISOString(),
+    ...(spotifyId ? { spotifyId } : {}),
   });
 
   // Enforce the cap right after growth. Failure here must not fail the playback

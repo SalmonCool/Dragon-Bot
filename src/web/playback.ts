@@ -1,7 +1,8 @@
 import { findSound } from '../audio/library.js';
 import { touchByName, touchEntry } from '../audio/manifest.js';
 import type { Category } from '../audio/paths.js';
-import { isUrl, ResolveError, resolveUrl } from '../sources/youtube.js';
+import { isSpotifyUrl, resolveSpotifyTrack } from '../sources/spotify.js';
+import { isUrl, ResolveError, resolveSearch, resolveUrl } from '../sources/youtube.js';
 
 export interface WebSound {
   name: string;
@@ -17,6 +18,14 @@ export interface WebSound {
  * that the route turns into a 400.
  */
 export async function resolveForWeb(category: Category, input: string): Promise<WebSound> {
+  // See shared.ts: Spotify links are metadata only, matched against YouTube.
+  if (isSpotifyUrl(input)) {
+    const track = await resolveSpotifyTrack(input);
+    const found = await resolveSearch(track.query, category, track.spotifyId);
+    if (found.cached) await touchEntry(found.id);
+    return { name: found.name, title: found.title, path: found.path };
+  }
+
   if (isUrl(input)) {
     const track = await resolveUrl(input, category);
     if (track.cached) await touchEntry(track.id);
