@@ -209,6 +209,15 @@ async function loadLibraries() {
     list.append(option);
   }
 
+  // Music and ambience share the same board contents on purpose: both draw from
+  // tracks/, and the same long file is often useful as either.
+  buildBoard($('music-board'), tracks, async (name) => {
+    // Honour the Loop checkbox, so it governs both ways of adding a track.
+    const result = await post('/api/play', { name, loop: $('play-loop').checked });
+    // Music queues rather than replacing, so say which happened.
+    toast(result.position === 0 ? 'Playing now.' : `Queued at ${result.position}.`);
+  });
+
   buildBoard($('ambience-board'), tracks, (name) =>
     post('/api/ambience', { name }),
   );
