@@ -1,4 +1,5 @@
-import { ResolveError } from './youtube.js';
+import type { Category } from '../audio/paths.js';
+import { ResolveError, resolveSearch, type ResolvedTrack } from './youtube.js';
 
 /**
  * Spotify link resolution.
@@ -102,7 +103,7 @@ async function get(url: string, accept: string): Promise<string> {
  * Still scraping, so treated as optional — if the shape changes we search on the
  * title alone, which works but matches less precisely.
  */
-function parseArtists(html: string): string | undefined {
+function parseArtists(html: string): string[] | undefined {
   const block = html.match(/"artists":\s*(\[[^\]]*\])/);
   if (!block) return undefined;
 
@@ -110,7 +111,63 @@ function parseArtists(html: string): string | undefined {
   if (names.length === 0) return undefined;
 
   // Two artists is plenty for a search query; more just adds noise.
-  return names.slice(0, 2).join(' ');
+  return names.slice(0, 2);
+}
+
+/** How the track is named back to the user in errors. */
+function describe(track: SpotifyTrack): string {
+  return track.artist ? `"${track.title}" by ${track.artist}` : `"${track.title}"`;
+}
+
+/**
+ * Rewrites a YouTube-side failure into something that makes sense to someone who
+ * pasted a Spotify link.
+ *
+ * Without this, a search landing on a live stream reports "That is a live stream" to
+ * a user who pasted a three-minute song — technically accurate and completely
+ * baffling. Naming the track and the step that failed is the difference between a
+ * usable error and a confusing one.
+ */
+function explainSearchFailure(error: unknown, track: SpotifyTrack): ResolveError {
+  const label = describe(track);
+
+  if (!(error instanceof ResolveError)) {
+    return new ResolveError(`Something went wrong looking for ${label} on YouTube.`);
+  }
+
+  if (/No results found/i.test(error.message)) {
+    return new ResolveError(
+      `Found ${label} on Spotify, but no match on YouTube. Spotify audio can't be ` +
+        `downloaded, so tracks are matched by search — obscure or very new songs ` +
+        `sometimes have none. Try pasting a YouTube link instead.`,
+    );
+  }
+
+  // Duration caps, live streams, bot detection: keep the real reason, add the track.
+  return new ResolveError(`Matched ${label} on YouTube, but couldn't use it — ${error.message}`);
+}
+
+export interface SpotifyResolution extends ResolvedTrack {
+  /** What was searched on YouTube, so callers can show the match that was made. */
+  query: string;
+}
+
+/**
+ * Full Spotify link -> playable file. Both the Discord and web paths use this, so
+ * their behaviour and error messages cannot drift apart.
+ */
+export async function resolveSpotifyLink(
+  input: string,
+  category: Category,
+): Promise<SpotifyResolution> {
+  const track = await resolveSpotifyTrack(input);
+
+  try {
+    const found = await resolveSearch(track.query, category, track.spotifyId);
+    return { ...found, query: track.query };
+  } catch (error) {
+    throw explainSearchFailure(error, track);
+  }
 }
 
 export async function resolveSpotifyTrack(input: string): Promise<SpotifyTrack> {
@@ -131,14 +188,16 @@ export async function resolveSpotifyTrack(input: string): Promise<SpotifyTrack> 
   }
 
   // Best-effort: a failure here costs match accuracy, not the whole lookup.
-  const artist = await get(`${EMBED}${spotifyId}`, 'text/html')
+  const artists = await get(`${EMBED}${spotifyId}`, 'text/html')
     .then(parseArtists)
     .catch(() => undefined);
 
   return {
     spotifyId,
     title,
-    artist,
-    query: artist ? `${artist} ${title}` : title,
+    // Comma-separated for reading back to the user; space-separated for the search,
+    // where punctuation only muddies the match.
+    artist: artists?.join(', '),
+    query: artists ? `${artists.join(' ')} ${title}` : title,
   };
 }

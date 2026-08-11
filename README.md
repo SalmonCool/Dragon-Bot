@@ -207,6 +207,16 @@ different mix, a live take, or a cover. Check with `/nowplaying` if it matters.
 Playlist, album, and podcast links are rejected with a message explaining why — only
 individual tracks work.
 
+**When a match can't be found**, the bot names the track it was looking for and says
+the search came up empty, rather than reporting a generic failure. Note that yt-dlp
+exits *successfully* with an empty result set in this case, so a silent no-op is the
+default behaviour that has to be caught deliberately.
+
+If a match is found but turns out to be unusable — a live stream, or longer than the
+3-hour cap — the error names the track and the reason together. Otherwise you'd paste
+a three-minute song and be told "that is a live stream", which is accurate and
+useless.
+
 No API credentials are needed. The title comes from Spotify's public oEmbed endpoint
 and the artists from the embed page's inline JSON.
 
