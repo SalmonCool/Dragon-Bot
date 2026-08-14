@@ -59,6 +59,28 @@ function guard(fn) {
   };
 }
 
+/**
+ * Disables a button and shows progress while its action runs.
+ *
+ * Resolving a track can take ten seconds or more — a Spotify lookup, a YouTube
+ * search, then a download. Without this the button looks inert, so it gets clicked
+ * again, and each click used to spawn another yt-dlp.
+ */
+async function withPending(button, fn) {
+  if (button.disabled) return;
+
+  const original = button.textContent;
+  button.disabled = true;
+  button.textContent = 'Working…';
+
+  try {
+    await fn();
+  } finally {
+    button.textContent = original;
+    button.disabled = false;
+  }
+}
+
 // --- views ----------------------------------------------------------------
 
 function showLogin() {
@@ -242,9 +264,7 @@ function buildBoard(container, items, action) {
     button.title = item.title;
     button.addEventListener(
       'click',
-      guard(async () => {
-        await action(item.name);
-      }),
+      guard(() => withPending(button, () => action(item.name))),
     );
     container.append(button);
   }
@@ -276,25 +296,29 @@ $('logout').addEventListener(
 
 $('play').addEventListener(
   'click',
-  guard(async () => {
-    const input = $('play-input');
-    const name = input.value.trim();
-    if (!name) return;
-    const result = await post('/api/play', { name, loop: $('play-loop').checked });
-    input.value = '';
-    toast(result.position === 0 ? 'Playing now.' : `Queued at ${result.position}.`);
-  }),
+  guard(() =>
+    withPending($('play'), async () => {
+      const input = $('play-input');
+      const name = input.value.trim();
+      if (!name) return;
+      const result = await post('/api/play', { name, loop: $('play-loop').checked });
+      input.value = '';
+      toast(result.position === 0 ? 'Playing now.' : `Queued at ${result.position}.`);
+    }),
+  ),
 );
 
 $('ambience-set').addEventListener(
   'click',
-  guard(async () => {
-    const input = $('ambience-input');
-    const name = input.value.trim();
-    if (!name) return;
-    await post('/api/ambience', { name });
-    input.value = '';
-  }),
+  guard(() =>
+    withPending($('ambience-set'), async () => {
+      const input = $('ambience-input');
+      const name = input.value.trim();
+      if (!name) return;
+      await post('/api/ambience', { name });
+      input.value = '';
+    }),
+  ),
 );
 
 $('ambience-stop').addEventListener('click', guard(() => post('/api/ambience', { stop: true })));

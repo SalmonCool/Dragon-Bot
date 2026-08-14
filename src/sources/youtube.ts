@@ -3,6 +3,7 @@ import { stat } from 'node:fs/promises';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { enforceCacheLimit } from '../audio/eviction.js';
+import { dedupe } from './inflight.js';
 import {
   addEntry,
   findById,
@@ -211,17 +212,19 @@ async function fromCache(
  * already been fetched.
  */
 export async function resolveUrl(url: string, category: Category): Promise<ResolvedTrack> {
-  const metadata = await fetchMetadata(url);
-  assertPlayable(metadata);
+  return dedupe(`url:${category}:${url}`, async () => {
+    const metadata = await fetchMetadata(url);
+    assertPlayable(metadata);
 
-  const existing = await findById(metadata.id);
-  if (existing) {
-    const cached = await fromCache(existing, category);
-    if (cached) return cached;
-    // Manifest says we have it but the file is gone — fall through and re-download.
-  }
+    const existing = await findById(metadata.id);
+    if (existing) {
+      const cached = await fromCache(existing, category);
+      if (cached) return cached;
+      // Manifest says we have it but the file is gone — fall through and re-download.
+    }
 
-  return download(metadata, category, url);
+    return download(metadata, category, url);
+  });
 }
 
 /**
@@ -233,6 +236,16 @@ export async function resolveUrl(url: string, category: Category): Promise<Resol
  * otherwise return different results.
  */
 export async function resolveSearch(
+  query: string,
+  category: Category,
+  spotifyId?: string,
+): Promise<ResolvedTrack> {
+  return dedupe(`search:${category}:${query}`, () =>
+    resolveSearchUncoordinated(query, category, spotifyId),
+  );
+}
+
+async function resolveSearchUncoordinated(
   query: string,
   category: Category,
   spotifyId?: string,

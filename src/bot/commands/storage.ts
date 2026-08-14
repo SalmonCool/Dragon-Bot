@@ -8,6 +8,7 @@ import {
 } from 'discord.js';
 import { clearDownloads, formatBytes, purgeCategory, report } from '../../audio/storage.js';
 import type { Category } from '../../audio/paths.js';
+import { inFlightCount } from '../../sources/inflight.js';
 import type { Command } from '../command.js';
 
 const CONFIRM_TIMEOUT_MS = 30_000;
@@ -70,6 +71,13 @@ export const storage: Command = {
             `${entry.files} file(s), ${entry.downloaded} downloaded`,
         ),
       ];
+
+      // Surfaces the state that caused a production stall: many resolutions
+      // running at once with nothing visible to explain the slowness.
+      const pending = inFlightCount();
+      if (pending > 0) {
+        lines.push('', `*${pending} download/lookup in progress.*`);
+      }
 
       if (capBytes > 0 && percent >= 80) {
         lines.push(
